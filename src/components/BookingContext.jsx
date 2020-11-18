@@ -26,6 +26,30 @@ const reducer = (state, action) => {
         ...initialState,
       };
     }
+    case "purchase-ticket-request": {
+      return {
+        ...state,
+        error: null,
+        status: "awaiting-response",
+      };
+    }
+
+    case "purchase-success": {
+      return {
+        ...state,
+        error: null,
+        status: "purchased",
+        price: null,
+      };
+    }
+
+    case "purchase-failure":
+      return {
+        ...state,
+        error: action.message,
+        status: "error",
+      };
+
     default:
       throw new Error(`unrecognized action: ${action.type}`);
   }
@@ -48,6 +72,24 @@ export const BookingProvider = ({ children }) => {
     dispatch({ type: "cancel-booking-process" });
   };
 
+  const bookingRequest = () => {
+    dispatch({
+      type: "purchase-ticket-request",
+    });
+  };
+
+  const purchaseSuccess = () => {
+    dispatch({
+      type: "purchase-success",
+    });
+  };
+
+  const purchaseFailure = () => {
+    dispatch({
+      type: "purchase-failure",
+    });
+  };
+
   return (
     <BookingContext.Provider
       value={{
@@ -55,6 +97,9 @@ export const BookingProvider = ({ children }) => {
         action: {
           beginBookingProcess,
           cancelBookingProcess,
+          bookingRequest,
+          purchaseSuccess,
+          purchaseFailure,
         },
       }}
     >

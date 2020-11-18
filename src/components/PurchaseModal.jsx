@@ -7,14 +7,24 @@ import DialogContentText from "@material-ui/core/DialogContentText";
 import TextField from "@material-ui/core/TextField";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
-
+import { useSeat } from "./SeatContext";
 import { useBooking } from "./BookingContext";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 const PurchaseModal = () => {
   const {
-    state: { selectedSeatId, price },
-    action: { cancelBookingProcess },
+    state: { selectedSeatId, price, error, status },
+    action: {
+      cancelBookingProcess,
+      bookingRequest,
+      purchaseSuccess,
+      purchaseFailure,
+    },
   } = useBooking();
+
+  const {
+    actions: { markSeatAsPurchased },
+  } = useSeat();
 
   const [creditCard, setCreditCard] = useState("");
   const [expiration, setExpiration] = useState("");
@@ -34,6 +44,33 @@ const PurchaseModal = () => {
   };
   const handleExpiration = (e) => {
     setExpiration(e.target.value);
+  };
+  const submit = async (e) => {
+    e.preventDefault();
+    bookingRequest();
+    try {
+      let data = await fetch("api/book-seat", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify({
+          creditCard,
+          expiration,
+          seatId: selectedSeatId,
+        }),
+      });
+      data = await data.json();
+      if (data.success) {
+        purchaseSuccess();
+        markSeatAsPurchased(selectedSeatId);
+      } else {
+        purchaseFailure(data.message);
+      }
+    } catch (err) {
+      console.log(err);
+      purchaseFailure("something went wrong");
+    }
   };
 
   return (
@@ -84,7 +121,13 @@ const PurchaseModal = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button color="primary">Purchase</Button>
+          <Button color="primary" onClick={submit}>
+            {status === "awaiting-response" ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Purchase"
+            )}
+          </Button>
         </DialogActions>
       </Dialog>
     </>
